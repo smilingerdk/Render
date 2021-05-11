@@ -10,17 +10,17 @@ namespace Render
         {
             var width = 100;
             var height = 100;
-            var image = new bool[width, height];
+            var image = new double[width, height];
 
             var a = new Point2D(50, 10);
             var b = new Point2D(80, 75);
             var c = new Point2D(15, 92);
 
             DrawTriangle(image, a, b, c);
-            ExportImage(image);
+            ExportImage(image, "output"); //DateTime.Now.ToString());
         }
 
-        private static void DrawTriangle(bool[,] image, Point2D a, Point2D b, Point2D c)
+        private static void DrawTriangle(double[,] image, Point2D a, Point2D b, Point2D c)
         {
             // TODO only check bounding box of triangle
             // TODO squares with early in/out
@@ -32,13 +32,13 @@ namespace Render
             {
                 for (int y = 0; y < height; y++)
                 {
-                    if (Tools2D.PointInTriangle(new Point2D(x, y), a, b, c))
-                        image[x, y] = true;
+                    var inTriangle = Tools2D.PointInTriangle(new Point2D(x, y), a, b, c);
+                    image[x, y] = inTriangle ? 0 : 1;
                 }
             }
         }
 
-        private static void ExportImage(bool[,] image)
+        private static void ExportImage(double[,] image, string filename)
         {
             var width = image.GetLength(0);
             var height = image.GetLength(1);
@@ -54,16 +54,14 @@ namespace Render
 
                 for (int x = 0; x < width; x++)
                 {
-                    if (image[x, y])
-                        line += "0 0 0\t";
-                    else
-                        line += "255 255 255\t";
+                    var color = (int)Math.Round(image[x, y] * 255);
+                    line += $"{color} {color} {color}\t";
                 }
 
                 builder.AppendLine(line);
             }
 
-            File.WriteAllText("output.ppm", builder.ToString());
+            File.WriteAllText(filename + ".ppm", builder.ToString());
         }
     }
 }
