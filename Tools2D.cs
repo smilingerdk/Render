@@ -1,43 +1,42 @@
 ﻿using System;
+using System.Numerics;
+
 namespace Render
 {
     public static class Tools2D
     {
-
-        public static bool PointInTriangle(Point2D p, Point2D a, Point2D b, Point2D c)
+        public static bool PointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
         {
             // Test if p lies inside triangle abc (counter clockwise)
 
             // If p is to the right of ab then outside triangle
-            if (Point2D.Cross(p - a, b - a) < 0)
+            if (Cross(p - a, b - a) < 0)
                 return false;
 
             // If p is to the right of bc then outside triangle
-            if (Point2D.Cross(p - b, c - b) < 0)
+            if (Cross(p - b, c - b) < 0)
                 return false;
 
             // If p is to the right of ca then outside triangle
-            if (Point2D.Cross(p - c, a - c) < 0)
+            if (Cross(p - c, a - c) < 0)
                 return false;
 
             return true;
         }
 
-        public static void UnitTest_PointInTriangle()
+        public static double Cross(Vector2 u, Vector2 v)
         {
-            var a = new Point2D(0, 3);
-            var b = new Point2D(-3, -3);
-            var c = new Point2D(3, -3);
+            return u.Y * v.X - u.X * v.Y;
+        }
 
-            var test1 = PointInTriangle(new Point2D(0, 0), a, b, c);
-            var test2 = PointInTriangle(new Point2D(1, 4), a, b, c);
-            var test3 = PointInTriangle(new Point2D(4, 1), a, b, c);
-            var test4 = PointInTriangle(new Point2D(1, 1), a, b, c);
+        public static Matrix4x4 Multiply(params Matrix4x4[] matrices)
+        {
+            var result = Matrix4x4.Identity;
 
-            Console.WriteLine("test1: " + test1);
-            Console.WriteLine("test2: " + test2);
-            Console.WriteLine("test3: " + test3);
-            Console.WriteLine("test4: " + test4);
+            foreach (var m in matrices)
+                result = Matrix4x4.Multiply(result, m);
+
+            return result;
         }
     }
 }
