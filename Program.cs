@@ -12,7 +12,11 @@ namespace Render
         {
             var width = 200;
             var height = 100;
-            var image = new double[width, height];
+            var image = new Vector3[width, height];
+
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    image[x, y] = Vector3.One; // Set color of image to white
 
             // World coordinates
             // Camera and model
@@ -23,6 +27,10 @@ namespace Render
                 new Vector3(3, -3, 0),
                 new Vector3(0, 3, 0),
             };
+
+            var color = new Vector3(1, 0, 0);
+
+            Debug.UnitTest_PointInTriangle();
 
             var cameraPosition = new Vector3(0, 0, -2);
             var cameraTarget = new Vector3(0, 0, 0);
@@ -51,11 +59,12 @@ namespace Render
             var transformed = triangle.Select(p => Vector4.Transform(p, transform)).ToArray();
             var screen = transformed.Select(p => new Vector2(p.X / p.W, p.Y / p.W)).ToArray();
 
-            DrawTriangle(image, screen[0], screen[1], screen[2], AntiAlias.SuperSampling2x2);
-            ExportImage(image, "output"); //DateTime.Now.ToString());
+            DrawTriangle(image, screen[0], screen[1], screen[2], color, AntiAlias.SuperSampling2x2);
+            //ExportImage(image, "output");
+            ExportImage(image, DateTime.Now.ToString());
         }
 
-        private static void DrawTriangle(double[,] image, Vector2 a, Vector2 b, Vector2 c, AntiAlias antiAlias)
+        private static void DrawTriangle(Vector3[,] image, Vector2 a, Vector2 b, Vector2 c, Vector3 color, AntiAlias antiAlias)
         {
             // TODO only check bounding box of triangle
             // TODO squares with early in/out
@@ -71,8 +80,8 @@ namespace Render
                     {
                         case AntiAlias.None:
                         {
-                            var inTriangle = Tools2D.PointInTriangle(new Vector2(x + .5f, y + .5f), a, b, c);
-                            image[x, y] = inTriangle ? 0 : 1;
+                            if (Tools2D.PointInTriangle(new Vector2(x + .5f, y + .5f), a, b, c))
+                                image[x, y] = color;
 
                             break;
                         }
@@ -85,9 +94,9 @@ namespace Render
                                 new Vector2(x + .8f, y + .8f)
                             };
 
-                            var r = (double)points.Count(p => !Tools2D.PointInTriangle(p, a, b, c)) / points.Count();
+                            var r = (float)points.Count(p => Tools2D.PointInTriangle(p, a, b, c)) / points.Count();
 
-                            image[x, y] = r;
+                            image[x, y] = Vector3.Lerp(image[x, y], color, r);
 
                             break;
                         }
@@ -96,7 +105,7 @@ namespace Render
             }
         }
 
-        private static void ExportImage(double[,] image, string filename)
+        private static void ExportImage(Vector3[,] image, string filename)
         {
             var width = image.GetLength(0);
             var height = image.GetLength(1);
@@ -112,8 +121,10 @@ namespace Render
 
                 for (int x = 0; x < width; x++)
                 {
-                    var color = (int)Math.Round(image[x, y] * 255);
-                    line += $"{color} {color} {color}\t";
+                    var r = (int)Math.Round(image[x, y].X * 255);
+                    var g = (int)Math.Round(image[x, y].Y * 255);
+                    var b = (int)Math.Round(image[x, y].Z * 255);
+                    line += $"{r} {g} {b}\t";
                 }
 
                 builder.AppendLine(line);
