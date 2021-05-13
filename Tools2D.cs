@@ -24,7 +24,7 @@ namespace Render
             return true;
         }
 
-        public static double Cross(Vector2 u, Vector2 v)
+        public static float Cross(Vector2 u, Vector2 v)
         {
             return u.Y * v.X - u.X * v.Y;
         }

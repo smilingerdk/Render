@@ -28,9 +28,12 @@ namespace Render
                 new Vector3(0, 3, 0),
             };
 
-            var color = new Vector3(1, 0, 0);
-
-            Debug.UnitTest_PointInTriangle();
+            Vector3[] colors =
+            {
+                new Vector3(1, 0, 0),
+                new Vector3(0, 1, 0),
+                new Vector3(0, 0, 1)
+            };
 
             var cameraPosition = new Vector3(0, 0, -2);
             var cameraTarget = new Vector3(0, 0, 0);
@@ -59,12 +62,20 @@ namespace Render
             var transformed = triangle.Select(p => Vector4.Transform(p, transform)).ToArray();
             var screen = transformed.Select(p => new Vector2(p.X / p.W, p.Y / p.W)).ToArray();
 
-            DrawTriangle(image, screen[0], screen[1], screen[2], color, AntiAlias.SuperSampling2x2);
-            //ExportImage(image, "output");
-            ExportImage(image, DateTime.Now.ToString());
+            DrawTriangle(image, screen[0], screen[1], screen[2], colors[0], colors[1], colors[2], AntiAlias.SuperSampling2x2);
+            ExportImage(image, "output");
+            //ExportImage(image, DateTime.Now.ToString());
         }
 
-        private static void DrawTriangle(Vector3[,] image, Vector2 a, Vector2 b, Vector2 c, Vector3 color, AntiAlias antiAlias)
+        private static void DrawTriangle(
+            Vector3[,] image,
+            Vector2 vertexA,
+            Vector2 vertexB,
+            Vector2 vertexC,
+            Vector3 colorA,
+            Vector3 colorB,
+            Vector3 colorC,
+            AntiAlias antiAlias)
         {
             // TODO only check bounding box of triangle
             // TODO squares with early in/out
@@ -72,15 +83,28 @@ namespace Render
             var width = image.GetLength(0);
             var height = image.GetLength(1);
 
+            float Area(Vector2 a, Vector2 b, Vector2 c) => .5f * Tools2D.Cross(Vector2.Subtract(b, a), Vector2.Subtract(c, a));
+
+            var area = Area(vertexA, vertexB, vertexC);
+
+            float PhiA(Vector2 x) => Area(x, vertexB, vertexC) / area;
+            float PhiB(Vector2 x) => Area(x, vertexC, vertexA) / area;
+            float PhiC(Vector2 x) => Area(x, vertexA, vertexB) / area;
+
+            Vector3 Color(Vector2 x) => colorA * PhiA(x) + colorB * PhiB(x) + colorC * PhiC(x);
+
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
+                    var fragment = new Vector2(x + .5f, y + .5f); // TODO: is fragment the right name?
+                    var color = Color(fragment);
+
                     switch (antiAlias)
                     {
                         case AntiAlias.None:
                         {
-                            if (Tools2D.PointInTriangle(new Vector2(x + .5f, y + .5f), a, b, c))
+                            if (Tools2D.PointInTriangle(fragment, vertexA, vertexB, vertexC))
                                 image[x, y] = color;
 
                             break;
@@ -94,7 +118,7 @@ namespace Render
                                 new Vector2(x + .8f, y + .8f)
                             };
 
-                            var r = (float)points.Count(p => Tools2D.PointInTriangle(p, a, b, c)) / points.Count();
+                            var r = (float)points.Count(p => Tools2D.PointInTriangle(p, vertexA, vertexB, vertexC)) / points.Count();
 
                             image[x, y] = Vector3.Lerp(image[x, y], color, r);
 
