@@ -7,6 +7,13 @@ namespace Render
     {
         public static bool PointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
         {
+            if (Ccw(a, b, c) < 0)
+            {
+                var temp = b;
+                b = c;
+                c = temp;
+            }
+
             // Test if p lies inside triangle abc (counter clockwise)
 
             // If p is to the right of ab then outside triangle
@@ -37,6 +44,11 @@ namespace Render
                 result = Matrix4x4.Multiply(result, m);
 
             return result;
+        }
+
+        public static float Ccw(Vector2 a, Vector2 b, Vector2 c)
+        {
+            return (b.X - a.X) * (c.Y - a.Y) - (c.X - a.X) * (b.Y - a.Y);
         }
     }
 }
