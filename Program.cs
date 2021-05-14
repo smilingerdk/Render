@@ -77,12 +77,16 @@ namespace Render
             Vector3 colorC,
             AntiAlias antiAlias)
         {
-            // TODO only check bounding box of triangle
             // TODO squares with early in/out
 
-            var width = image.GetLength(0);
-            var height = image.GetLength(1);
+            float[] xValues = { vertexA.X, vertexB.X, vertexC.X };
+            float[] yValues = { vertexA.Y, vertexB.Y, vertexC.Y };
 
+            var minX = (int)Math.Floor(xValues.Min());
+            var maxX = (int)Math.Ceiling(xValues.Max());
+            var minY = (int)Math.Floor(yValues.Min());
+            var maxY = (int)Math.Ceiling(yValues.Max());
+            
             float Area(Vector2 a, Vector2 b, Vector2 c) => .5f * Tools2D.Cross(Vector2.Subtract(b, a), Vector2.Subtract(c, a));
 
             var area = Area(vertexA, vertexB, vertexC);
@@ -93,9 +97,9 @@ namespace Render
 
             Vector3 Color(Vector2 x) => colorA * PhiA(x) + colorB * PhiB(x) + colorC * PhiC(x);
 
-            for (int x = 0; x < width; x++)
+            for (int x = minX; x <= maxX; x++)
             {
-                for (int y = 0; y < height; y++)
+                for (int y = minY; y <= maxY; y++)
                 {
                     var fragment = new Vector2(x + .5f, y + .5f); // TODO: is fragment the right name?
                     var color = Color(fragment);
