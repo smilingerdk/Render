@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Drawing;
 
 namespace Render
 {
@@ -11,8 +12,8 @@ namespace Render
     {
         public static void Main(string[] args)
         {
-            var width = 200;
-            var height = 100;
+            var width = 2000;
+            var height = 1000;
             var image = new Vector3[width, height];
             var zBuffer = new float[width, height];
 
@@ -28,7 +29,7 @@ namespace Render
             // World coordinates
             // Camera and model
 
-            var triangles = TriangulateCube(1.5f);
+            var triangles = TriangulateCube(15f);
 
             /*var triangles = new List<Vector3[]>
             {
@@ -65,7 +66,7 @@ namespace Render
                 //red, green, blue, red, green, blue, red, green, blue, red, green, blue, red, green, blue, red, green, blue
             };
 
-            var cameraPosition = new Vector3(2, 2, 2);
+            var cameraPosition = new Vector3(20, 20, 20);
             var cameraTarget = new Vector3(0, 0, 0);
             var cameraDirection = Vector3.Normalize(cameraPosition - cameraTarget); // Note: this is actually pointing in the opposite direction
 
@@ -75,9 +76,9 @@ namespace Render
             Vector3 up = new Vector3(0, 1, 0); // Some up vector, not orthogonal to the camera
             Vector3 cameraRight = Vector3.Normalize(Vector3.Cross(up, cameraDirection));
             Vector3 cameraUp = Vector3.Cross(cameraDirection, cameraRight);
-
+            
             var lookAt = Matrix4x4.CreateLookAt(cameraPosition, cameraTarget, cameraUp); // View
-            var perspective = Matrix4x4.CreatePerspective(6, 3, 1, 10); // Projection
+            var perspective = Matrix4x4.CreatePerspective(60, 30, 10, 30); // Projection
 
             Matrix4x4[] matrices = {
                 lookAt,
@@ -99,8 +100,8 @@ namespace Render
                 DrawTriangle(image, zBuffer, screen[0], screen[1], screen[2], color, color, color, depths, AntiAlias.None);
             }
 
-            ExportImage(image, "output");
-            ExportImage(ZBufferToImage(zBuffer), "zbuffer");
+            ExportImageBmp(image, "output");
+            ExportImageBmp(ZBufferToImage(zBuffer), "zbuffer");
             //ExportImage(image, DateTime.Now.ToString());
         }
 
@@ -190,7 +191,7 @@ namespace Render
             }
         }
 
-        private static void ExportImage(Vector3[,] image, string filename)
+        private static void ExportImagePpm(Vector3[,] image, string filename)
         {
             var width = image.GetLength(0);
             var height = image.GetLength(1);
@@ -206,9 +207,7 @@ namespace Render
 
                 for (int x = 0; x < width; x++)
                 {
-                    var r = (int)Math.Round(image[x, y].X * 255);
-                    var g = (int)Math.Round(image[x, y].Y * 255);
-                    var b = (int)Math.Round(image[x, y].Z * 255);
+                    var (r, g, b) = ToRgbColor(image[x, y]);
                     line += $"{r} {g} {b}\t";
                 }
 
@@ -216,6 +215,34 @@ namespace Render
             }
 
             File.WriteAllText(filename + ".ppm", builder.ToString());
+        }
+
+        private static void ExportImageBmp(Vector3[,] image, string filename)
+        {
+            var width = image.GetLength(0);
+            var height = image.GetLength(1);
+            var bitmap = new Bitmap(width, height);
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    var (r, g, b) = ToRgbColor(image[x, y]);
+
+                    bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
+                }
+            }
+
+            bitmap.Save(filename + ".bmp");
+        }
+
+        private static (int, int, int) ToRgbColor(Vector3 v)
+        {
+            var r = (int)Math.Round(v.X * 255);
+            var g = (int)Math.Round(v.Y * 255);
+            var b = (int)Math.Round(v.Z * 255);
+
+            return (r, g, b);
         }
 
         public static List<Vector3[]> TriangulateCube(float scale = 1)
@@ -231,8 +258,8 @@ namespace Render
 
             var result = new List<Vector3[]>();
 
-            result.AddRange(TriangulateFace(a, c, b, d));
-            result.AddRange(TriangulateFace(a, b, e, f));
+            result.AddRange(TriangulateFace(a, b, d, c));
+            result.AddRange(TriangulateFace(a, b, f, e));
             result.AddRange(TriangulateFace(e, f, h, g));
             result.AddRange(TriangulateFace(c, d, h, g));
             result.AddRange(TriangulateFace(a, c, g, e));
